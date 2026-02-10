@@ -23,7 +23,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: self-hosted # We need to create this runner in aws ec2. This runs on environment server
+    runs-on: self-hosted
     steps:
       - name: Pull image from Docker Hub
         run: docker pull strategic/nixathon-nest:latest
