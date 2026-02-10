@@ -1,0 +1,96 @@
+name: Deploy NestJS to EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Test
+        run: npm test --if-present
+
+      - name: Build
+        run: npm run build
+
+      # Create a minimal deployment bundle:
+      # dist + package*.json (so server can npm ci --omit=dev)
+      - name: Package artifact
+        run: |
+          mkdir -p deploy
+          cp -r dist deploy/dist
+          cp package.json package-lock.json deploy/
+          tar -czf nest-app.tgz -C deploy .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nest-app
+          path: nest-app.tgz
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nest-app
+
+      - name: Copy artifact to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "nest-app.tgz"
+          target: "/var/www/nest-app/releases"
+
+      - name: Deploy on EC2 (unpack + install + restart)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+
+            APP_BASE="/var/www/nest-app"
+            RELEASE_DIR="$APP_BASE/releases/$(date +%Y%m%d%H%M%S)"
+            mkdir -p "$RELEASE_DIR"
+
+            # Move artifact into timestamped release dir
+            mv "$APP_BASE/releases/nest-app.tgz" "$RELEASE_DIR/nest-app.tgz"
+            tar -xzf "$RELEASE_DIR/nest-app.tgz" -C "$RELEASE_DIR"
+            rm "$RELEASE_DIR/nest-app.tgz"
+
+            # Install production dependencies inside the release
+            cd "$RELEASE_DIR"
+            npm ci --omit=dev
+
+            # Point "current" to the new release
+            ln -sfn "$RELEASE_DIR" "$APP_BASE/current"
+
+            # Restart app with PM2 (or start if not running)
+            pm2 startOrReload "$APP_BASE/ecosystem.config.js" --update-env
+            pm2 save
+
+            # Optional: keep only last 5 releases
+            ls -1dt "$APP_BASE/releases/"* | tail -n +6 | xargs -r rm -rf
