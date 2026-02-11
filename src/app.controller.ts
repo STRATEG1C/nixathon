@@ -20,11 +20,13 @@ export class AppController {
 
   @Post('negotiate')
   negotiate(@Req() request: Request) {
+    console.log(request);
+
     const {
       playerTower: { playerId, hp, armor, resources },
       enemyTowers,
       combatActions,
-    } = request as any;
+    } = request.body as any;
 
     const allyId = enemyTowers[0].playerId;
 
@@ -46,7 +48,7 @@ export class AppController {
       enemyTowers,
       combatActions,
       diplomacy,
-    } = request as any;
+    } = request.body as any;
 
     const targetId = enemyTowers[0].playerId;
 
