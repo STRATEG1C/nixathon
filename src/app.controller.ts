@@ -75,8 +75,8 @@ export class AppController {
 
     let availableResources = resources;
 
-    const nextLevelPrice = upgradePrices[level-1];
-    const expectedIncome = calculateExpectedIncome(level);
+    const levelPrice = upgradePrices[level-1];
+    const income = calculateExpectedIncome(level);
 
     const actions: any[] = [];
 
@@ -95,16 +95,17 @@ export class AppController {
       return actions;
     }
 
-    if (availableResources >= nextLevelPrice) {
+    if (availableResources >= levelPrice) {
       actions.push({ "type": "upgrade" });
-      availableResources -= nextLevelPrice;
+      availableResources -= levelPrice;
     }
 
-    const armorAddition = expectedIncome - ((nextLevelPrice - availableResources) % expectedIncome);
+    if (resources === income) {
+      const armorAddition = Math.ceil(levelPrice / income) * income - levelPrice;
 
-    if (armorAddition != 0 && availableResources >= armorAddition) {
-      actions.push({ "type": "armor", "amount": armorAddition });
-      availableResources -= armorAddition;
+      if (armorAddition != 0 && availableResources >= armorAddition) {
+        actions.push({ "type": "armor", "amount": armorAddition });
+      }
     }
 
     return actions;
