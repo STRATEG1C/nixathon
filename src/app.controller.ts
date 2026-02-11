@@ -52,6 +52,8 @@ export class AppController {
 
     const targetId = enemyTowers[0].playerId;
 
-    return { 'type': 'attack', 'targetId': targetId, 'troopCount': resources };
+    return [
+      { 'type': 'attack', 'targetId': targetId, 'troopCount': resources }
+    ];
   }
 }
