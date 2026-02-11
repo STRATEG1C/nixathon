@@ -27,7 +27,6 @@ export class AppController {
     } = request as any;
 
     const allyId = enemyTowers[0].playerId;
-    const attackTargetId = enemyTowers[1].playerId;
 
     // enemyTowers.forEach((enemy) => {
     //
@@ -36,7 +35,6 @@ export class AppController {
     return [
       {
         "allyId": allyId,
-        "attackTargetId": attackTargetId
       },
     ];
   }
