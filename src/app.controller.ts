@@ -2,6 +2,14 @@ import { Controller, Get, Post, Req } from '@nestjs/common';
 import { AppService } from './app.service';
 import type { Request } from 'express';
 
+const calculateUpToNextLevel = (currentLevel: number): number => {
+  return Math.ceil(50 * (1.75 ^ (currentLevel - 1)));
+}
+
+const calculateExpectedIncome = (currentLevel: number): number => {
+  return Math.ceil(20 * (1.5 ^ (currentLevel - 1)));
+}
+
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
@@ -28,23 +36,23 @@ export class AppController {
       combatActions,
     } = request.body as any;
 
-    const allyId = enemyTowers[0].playerId;
+    const allyMessages: any[] = [];
 
-    // enemyTowers.forEach((enemy) => {
-    //
-    // });
+    enemyTowers.forEach((enemy) => {
+      allyMessages.push({ allyId: enemy.playerId })
+    });
 
-    return [
-      {
-        "allyId": allyId,
-      },
-    ];
+    enemyTowers.toReversed().forEach((enemy, i) => {
+      allyMessages[i].attackTargetId = enemy.playerId;
+    })
+
+    return allyMessages;
   }
 
   @Post('combat')
   combat(@Req() request: Request) {
     const {
-      playerTower: { playerId, hp, armor, resources },
+      playerTower: { playerId, hp, armor, resources, level },
       enemyTowers,
       combatActions,
       diplomacy,
@@ -52,8 +60,31 @@ export class AppController {
 
     const targetId = enemyTowers[0].playerId;
 
-    return [
-      { 'type': 'attack', 'targetId': targetId, 'troopCount': resources }
-    ];
+    diplomacy.forEach(() => {
+
+    });
+
+    enemyTowers.forEach((enemy) => {
+
+    });
+
+    const neededToUp = calculateUpToNextLevel(level)
+
+    const actions: any[] = [];
+
+    if (resources >= neededToUp) {
+      actions.push({ "type": "upgrade" });
+    }
+
+    actions.push({ "type": "armor", "amount": Math.ceil(resources * 0.25) });
+
+    return actions;
+
+    // Response
+    // [
+    //   { "type": "armor", "amount": 5 },
+    //   { "type": "attack", "targetId": 102, "troopCount": 20 },
+    //   { "type": "upgrade" }
+    // ]
   }
 }
