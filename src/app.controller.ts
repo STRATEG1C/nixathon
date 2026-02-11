@@ -69,6 +69,10 @@ export class AppController {
       diplomacy,
     } = request.body as any;
 
+    const theStrongestEnemyLevel = enemyTowers.reduce((acc, nextEnemy) => {
+      return Math.max(acc, nextEnemy.level);
+    }, 1);
+
     let availableResources = resources;
 
     const nextLevelPrice = upgradePrices[level-1];
@@ -76,7 +80,16 @@ export class AppController {
 
     const actions: any[] = [];
 
+    // If the level of tower is 5, add all resources into armor
     if (level >= 5) {
+      actions.push({ "type": "armor", "amount": resources });
+
+      return actions;
+    }
+
+    // If our "hp and armor" is less than the income of the strongest player, add all resources into armor
+    const hpAndArmor = hp + armor;
+    if (hpAndArmor <= calculateExpectedIncome(theStrongestEnemyLevel)) {
       actions.push({ "type": "armor", "amount": resources });
 
       return actions;
