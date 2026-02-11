@@ -3,11 +3,19 @@ import { AppService } from './app.service';
 import type { Request } from 'express';
 
 const calculateUpToNextLevel = (currentLevel: number): number => {
-  return Math.ceil(50 * (1.75 ^ (currentLevel - 1)));
+  return Math.ceil(50 * Math.pow(1.75, currentLevel - 1));
 }
 
 const calculateExpectedIncome = (currentLevel: number): number => {
-  return Math.ceil(20 * (1.5 ^ (currentLevel - 1)));
+  return Math.ceil(20 * Math.pow(1.5, currentLevel - 1));
+}
+
+const calculateArmorAddition = (currentLevel: number): number => {
+  return Math.ceil(5 * Math.pow(1.75, currentLevel - 1));
+}
+
+const calculateAttackTroops = (currentLevel: number): number => {
+  return Math.ceil(5 * Math.pow(1.75, currentLevel - 1));
 }
 
 @Controller()
@@ -60,23 +68,36 @@ export class AppController {
 
     const targetId = enemyTowers[0].playerId;
 
-    diplomacy.forEach(() => {
+    // diplomacy.forEach(() => {
+    //
+    // });
+    //
+    // enemyTowers.forEach((enemy) => {
+    //
+    // });
 
-    });
-
-    enemyTowers.forEach((enemy) => {
-
-    });
-
-    const neededToUp = calculateUpToNextLevel(level)
+    let availableResources = resources;
 
     const actions: any[] = [];
 
-    if (resources >= neededToUp) {
+    const neededToUp = calculateUpToNextLevel(level);
+    if (availableResources >= neededToUp) {
       actions.push({ "type": "upgrade" });
+      availableResources -= neededToUp;
     }
 
-    actions.push({ "type": "armor", "amount": Math.ceil(resources * 0.25) });
+    const armorAddition = calculateArmorAddition(level);
+    if (availableResources >= armorAddition) {
+      actions.push({ "type": "armor", "amount": armorAddition });
+      availableResources -= armorAddition;
+    }
+
+    const attackTroops = calculateAttackTroops(level);
+
+    if (availableResources >= attackTroops) {
+      actions.push({ "type": "attack", "targetId": targetId, "troopCount": attackTroops });
+      availableResources -= attackTroops;
+    }
 
     return actions;
 
