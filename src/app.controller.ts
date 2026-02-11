@@ -102,7 +102,7 @@ export class AppController {
 
     const armorAddition = (nextLevelPrice - availableResources) % expectedIncome;
 
-    if (armorAddition != 0) {
+    if (armorAddition != 0 && availableResources >= armorAddition) {
       actions.push({ "type": "armor", "amount": armorAddition });
       availableResources -= armorAddition;
     }
