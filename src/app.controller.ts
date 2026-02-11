@@ -18,6 +18,8 @@ const calculateAttackTroops = (currentLevel: number): number => {
   return Math.ceil(5 * Math.pow(1.75, currentLevel - 1));
 }
 
+const upgradePrices = [50, 88, 153, 268, 469];
+
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
@@ -60,52 +62,31 @@ export class AppController {
   @Post('combat')
   combat(@Req() request: Request) {
     const {
+      turn,
       playerTower: { playerId, hp, armor, resources, level },
       enemyTowers,
       combatActions,
       diplomacy,
     } = request.body as any;
 
-    const targetId = enemyTowers[0].playerId;
-
-    // diplomacy.forEach(() => {
-    //
-    // });
-    //
-    // enemyTowers.forEach((enemy) => {
-    //
-    // });
-
     let availableResources = resources;
+
+    const nextLevelPrice = upgradePrices[level-1];
+    const expectedIncome = calculateExpectedIncome(level);
+    const armorAddition = nextLevelPrice % expectedIncome;
 
     const actions: any[] = [];
 
-    const neededToUp = calculateUpToNextLevel(level);
-    if (availableResources >= neededToUp) {
-      actions.push({ "type": "upgrade" });
-      availableResources -= neededToUp;
-    }
-
-    const armorAddition = calculateArmorAddition(level);
-    if (availableResources >= armorAddition) {
+    if (availableResources == expectedIncome) {
       actions.push({ "type": "armor", "amount": armorAddition });
       availableResources -= armorAddition;
     }
 
-    const attackTroops = calculateAttackTroops(level);
-
-    if (availableResources >= attackTroops) {
-      actions.push({ "type": "attack", "targetId": targetId, "troopCount": attackTroops });
-      availableResources -= attackTroops;
+    if (availableResources >= nextLevelPrice) {
+      actions.push({ "type": "upgrade" });
+      availableResources -= nextLevelPrice;
     }
 
     return actions;
-
-    // Response
-    // [
-    //   { "type": "armor", "amount": 5 },
-    //   { "type": "attack", "targetId": 102, "troopCount": 20 },
-    //   { "type": "upgrade" }
-    // ]
   }
 }
