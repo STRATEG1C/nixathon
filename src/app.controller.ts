@@ -76,7 +76,7 @@ export class AppController {
 
     const actions: any[] = [];
 
-    if (availableResources >= nextLevelPrice) {
+    if (availableResources >= nextLevelPrice && level < 5) {
       actions.push({ "type": "upgrade" });
       availableResources -= nextLevelPrice;
     }
